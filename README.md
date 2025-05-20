@@ -42,8 +42,14 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 2- Clone this repository there
 
 3- Create a `.env` file by copying the `.env.example` and change the values to your needs
+4- Create a acme.json file and give it the right permissions
 
-4- Launch the container
+```bash
+touch letsencrypt/acme.json
+chmod 600 letsencrypt/acme.json
+```
+
+5- Launch the container
 
 ```bash
 docker compose up -d
