@@ -28,6 +28,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.whoami.rule=Host(`${WEBSITE_DOMAIN}`)"
+      - "traefik.http.routers.whoami.rule=Path(`/.well-known/acme-challenge`)"
       - "traefik.http.routers.whoami.entrypoints=websecure"
       - "traefik.http.routers.whoami.tls.certresolver=letsEncryptResolver"
     networks:
@@ -43,13 +44,13 @@ services:
     labels:
       # The labels are usefull for Traefik only
       - "traefik.enable=true"
-      - "traefik.docker.network=main-network"
       # Get the routes from http
       - "traefik.http.routers.wordpress.entrypoints=web"
       - "traefik.http.routers.wordpress.rule=Host(`${WEBSITE_DOMAIN}`)"
       # Redirect these routes to https
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.routers.wordpress.middlewares=redirect-to-https@docker"
+      - "traefik.http.routers.wordpress.priority=1"
       # Get the routes from https
       - "traefik.http.services.wordpress.loadbalancer.server.port=80"
       - "traefik.http.routers.wordpress.entrypoints=websecure"
@@ -62,7 +63,7 @@ services:
       - db
     networks:
       - main-network
-  mysiteredis:
+  redis:
     image: redis:6
     restart: always
     logging:
