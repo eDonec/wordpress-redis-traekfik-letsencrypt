@@ -1,0 +1,108 @@
+services:
+  traefik:
+    image: "traefik:v3.4"
+    container_name: "traefik"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.websecure.address=:443"
+      - "--entryPoints.web.address=:80"
+      - "--certificatesresolvers.letsEncryptResolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsEncryptResolver.acme.email=${LETS_ENCRYPT_SSL_CERTIFICATE_EMAIL}"
+      - "--certificatesresolvers.letsEncryptResolver.acme.storage=/letsencrypt/acme.json"
+      #- "--log.level=DEBUG"
+      #- "--certificatesresolvers.letsEncryptResolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+    ports:
+      - "443:443"
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - main-network
+  whoami:
+    image: "traefik/whoami"
+    container_name: "simple-service"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`${WEBSITE_DOMAIN}`)"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=letsEncryptResolver"
+    networks:
+      - main-network
+  wordpress:
+    image: wordpress
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${DATABASE_USER}
+      WORDPRESS_DB_PASSWORD: ${DATABASE_PASSWORD}
+      WORDPRESS_DB_NAME: ${WEBSITE_DB_NAME}
+    labels:
+      # The labels are usefull for Traefik only
+      - "traefik.enable=true"
+      - "traefik.docker.network=main-network"
+      # Get the routes from http
+      - "traefik.http.routers.wordpress.entrypoints=web"
+      - "traefik.http.routers.wordpress.rule=Host(`${WEBSITE_DOMAIN}`)"
+      # Redirect these routes to https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.wordpress.middlewares=redirect-to-https@docker"
+      # Get the routes from https
+      - "traefik.http.services.wordpress.loadbalancer.server.port=80"
+      - "traefik.http.routers.wordpress.entrypoints=websecure"
+      # Apply autentificiation with http challenge
+      - "traefik.http.routers.wordpress.tls=true"
+      - "traefik.http.routers.wordpress.tls.certresolver=letsEncryptResolver"
+    volumes:
+      - wordpress:./website
+    depends_on:
+      - db
+    networks:
+      - main-network
+  mysiteredis:
+    image: redis:6
+    restart: always
+    logging:
+      # Configure the logs retention according to your needs
+      options:
+        max-size: "10m"
+        max-file: "3"
+    env_file:
+      - ./.env
+    ports:
+      - "6379:6379"
+    # launch Redis in cache mode with :
+    #  - max memory up to 50% of your RAM if needed (--maxmemory 512mb)
+    #  - deleting oldest data when max memory is reached (--maxmemory-policy allkeys-lru)
+    entrypoint:
+      [
+        "redis-server",
+        "--maxmemory",
+        "512mb",
+        "--maxmemory-policy",
+        "allkeys-lru",
+      ]
+    networks:
+      - main-network
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${WEBSITE_DB_NAME}
+      MYSQL_USER: ${DATABASE_USER}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - db:./db
+    networks:
+      - main-network
+
+volumes:
+  wordpress:
+  db:
+networks:
+  main-network:
+    driver: bridge
