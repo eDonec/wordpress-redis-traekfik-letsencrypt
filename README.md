@@ -56,3 +56,17 @@ docker compose up -d
 ```
 
 > Note this is necessary to play with redis : W3 Total Cache to take advantage of Redis Cache
+
+## Notes
+
+removing the comments from the docker-compose.yml file will allow you to use the following features:
+
+- Traefik dashboard
+- Traefik verbose logs
+
+```yml
+#- "--api.insecure=true" --> to enable the Dashboard
+#- "--log.level=DEBUG" --> to enable the verbose logs
+ports:
+  #- "8080:8080" --> to enable the Dashboard
+```
