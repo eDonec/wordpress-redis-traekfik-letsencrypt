@@ -57,7 +57,7 @@ services:
       - "traefik.http.routers.wordpress.tls=true"
       - "traefik.http.routers.wordpress.tls.certresolver=letsEncryptResolver"
     volumes:
-      - wordpress:./website
+      - wordpress:/var/www/html
     depends_on:
       - db
     networks:
@@ -96,7 +96,7 @@ services:
       MYSQL_PASSWORD: ${DATABASE_PASSWORD}
       MYSQL_RANDOM_ROOT_PASSWORD: "1"
     volumes:
-      - db:./db
+      - db:/var/lib/mysql
     networks:
       - main-network
 
