@@ -32,7 +32,8 @@ services:
     networks:
       - main-network
   wordpress:
-    image: wordpress
+    build:
+      context: ./wordpress
     restart: always
     environment:
       WORDPRESS_DB_HOST: db
