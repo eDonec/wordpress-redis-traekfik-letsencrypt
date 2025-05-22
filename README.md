@@ -70,3 +70,19 @@ removing the comments from the docker-compose.yml file will allow you to use the
 ports:
   #- "8080:8080" --> to enable the Dashboard
 ```
+
+## Setting up this same system on a local machine
+
+1- Install Docker Desktop
+
+2- Create a directory for the project
+
+3- Clone this repository there
+
+4- Create a `.env` file by copying the `.env.example` and change the values to your needs
+
+5- And spin the dev docker compose file
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
